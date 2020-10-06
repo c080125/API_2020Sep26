@@ -1,0 +1,39 @@
+#body{
+    margin: auto;
+    width: 800px;
+}
+
+h1{
+    text-align: center;
+    color: cadetblue;
+}
+#myMap{
+    margin: auto;
+}
+#w3w{
+    font-size: 20px;
+    width: 500px;
+    margin: 20px auto;
+    display: block;
+    text-align: center;
+}
+#text{
+    font-size: 20px;
+    width: 500px;
+    margin: 20px auto;
+    display: block;
+    padding: 3px;
+}
+.btn{
+    margin: 20px auto;
+    display: flex;
+    justify-content: center ;
+}
+#btn{
+    width: 100px;
+    margin: 10px;
+}
+#btnclr{
+    width: 100px;
+    margin: 10px;
+}

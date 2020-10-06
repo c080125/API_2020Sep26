@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>What3Word X BingMap</title>
+    <link rel="stylesheet" href="css/style.css">
+
+</head>
+<body id="body">
+    <!-- 地図を埋め込む -->
+    <!-- ダブルクリックしたらその緯度と経度を取得して、記録してく。ホバーしたらマーク変える -->
+    <!--  -->
+    <h1>What3Word x BingMap</h1>
+    <ul>
+        <li style="list-style: none;">＜遊び方＞</li>
+        <li style="list-style: none;">下の地図で、好きな地点をクリックしてください</li>
+        <li style="list-style: none;">ランダムに３単語が表示されるので、その全てを使って作文してください</li>
+    </ul>
+    <div id="myMap" style="width:500px; height:500px; border:5px solid black"></div>
+    <textarea id="w3w">お題：What3Word</textarea>
+    <textarea name="" id="text" cols="30" rows="10" style="width: 500px;">上記お題を全て使って作文してください</textarea>
+    <div id="geocode" style="display: none;">geocode:data</div>
+    <div class="btn">
+        <button type="submit" id="btn">Submit</button>
+        <button type="" id="btnclr">All Clear</button>
+    </div>
+    <div id="opbox" style="width:500px; height:350px; overflow:auto; 
+        margin:auto; border:1px solid #cccccc">
+            <p id="output">
+            </p>
+        </div>
+    <!-- <div id="wrap" style="width: 100%; height: 100%;"> -->
+    <!-- </div> -->
+
+    <!-- ------------------------------------------------------------ -->
+
+    <!-- 以下JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+    <script src='https://www.bing.com/api/maps/mapcontrol?callback=GetMap&key=API' async defer></script>
+    <script src="/js/BmapQuery.js"></script>
+    <script src="https://assets.what3words.com/sdk/v3/what3words.js?key=API"></script>
+    <!-- ↑What3WordsのAPI -->
+    <!-- ↓FirebaseのAPI -->
+    <!-- The core Firebase JS SDK is always required and must be listed first -->
+    <script src="https://www.gstatic.com/firebasejs/7.22.1/firebase.js"></script>
+    <!-- "-app"は削除 -->
+
+    <!-- TODO: Add SDKs for Firebase products that you want to use
+         https://firebase.google.com/docs/web/setup#available-libraries -->
+
+    <script>
+        // Your web app's Firebase configuration
+        var firebaseConfig = {
+            apiKey: "API",
+            authDomain: "w3w-x-bingmap.firebaseapp.com",
+            databaseURL: "https://w3w-x-bingmap.firebaseio.com",
+            projectId: "w3w-x-bingmap",
+            storageBucket: "w3w-x-bingmap.appspot.com",
+            messagingSenderId: "438769788988",
+            appId: "1:438769788988:web:5dedfb5881a902c5d13b39"
+        };
+    // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const ref   = firebase.database().ref();
+    </script>
+    <!-- ↑FirebaseのAPI -->
+
+    <script>
+        function GetMap(){
+            const map = new Bmap("#myMap");
+            map.startMap(47.6149, -122.1941, "load", 1); //Seatleスタート
+            map.onGeocode("click", function (data){
+                console.log(data);                   //Get GeocodeObjectData
+                const lat = data.location.latitude;  //Get latitude
+                const lng = data.location.longitude; //Get longitude
+                document.querySelector("#geocode").innerHTML='Latitude:'+lat+ ',' +'Longtitude:'+lng;
+                what3words.api.convertTo3wa({lat, lng}).then(function (response) {
+                    console.log("[convertTo3wa]", response);
+                    const words = response.words; //これをグローバル変数にしたいがどうしたらいい…？
+                    document.querySelector("#w3w").innerHTML=words; //結局「w3w」のclassを調整して対応
+                    // return words;
+                });
+                // const words = response(response);
+                // console.log(words);
+                // return words;
+            });
+            // const words = data(data);
+            // console.log(words);
+            // return words;
+        };
+        // let words = GetMap();
+        // console.log(words);
+
+    // 以下、作成した英作文の保存用DB
+        $("#btn").on("click",function(){
+            let now = new Date();
+            let year = now.getFullYear();
+            let month = now.getMonth()+1;
+            let date = now.getDate();
+            let hour = now.getHours();
+            let min = now.getMinutes();
+            let sec = now.getSeconds();
+            const time = year+"/"+month+"/"+date+"   "+hour+":"+min+":"+sec;
+            const words   = $("#w3w").val();
+            const text  = $("#text").val();
+            //console.log(words); // なぜかブランクのまま「function GetMap」からローカル変数の「words」を抽出したい=>divではなく、textareaにすることで表示された
+            //console.log(text);
+            const msg   = {
+                time:time, //左側がキー名、右側が変数
+                words:words,
+                text:text,
+            }; // object変数の入れ物
+            ref.push(msg);
+        });
+
+        ref.on("child_added",function(data){
+            const v =   data.val(); 
+            const k =   data.key; 
+            const h =   '<p id="output">'+v.time+'<br>'+v.words+'<br>'+v.text+'</p>';
+            $("#opbox").append(h);
+        });
+
+        $("#text").on("click",function(){
+            $("#text").text("");
+        });
+
+        $("#myMap").on("mouseenter",function(){
+            $(this).css("cursor","pointer");
+        });
+
+        $("#btnclr").on("click",function(){
+            $("#w3w").text("");
+            $("#text").text("");
+            $("#opbox").text("");
+            ref.remove();
+        });
+    </script>
+</body>
+</html>
